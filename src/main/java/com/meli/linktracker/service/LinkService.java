@@ -20,14 +20,21 @@ public class LinkService {
     }
 
     public Link create(Link link) {
-        link.setPassword(encryptPassword(link));
+        if (Objects.nonNull(link.getPassword())){
+            link.setPassword(encryptPassword(link));
+        }
+
         return linkDao.persist(link);
     }
 
-    public String redirect(String linkId) {
+    public String redirect(String linkId, String password) {
         var link = linkDao.fetch(linkId);
         if (Objects.isNull(link)) {
             throw new IllegalArgumentException("Link not found");
+        }
+
+        if (Objects.nonNull(link.getPassword()) && !link.getPassword().equals(encryptPassword(password.getBytes()))){
+            throw new IllegalArgumentException("Password invalid");
         }
 
         if (!link.isActive()) {
@@ -51,6 +58,10 @@ public class LinkService {
     }
 
     private String encryptPassword(Link link) {
-        return Arrays.toString(Base64.encodeBase64(link.getPassword().getBytes()));
+        return encryptPassword(link.getPassword().getBytes());
+    }
+
+    private String encryptPassword(byte[] bytes){
+        return Arrays.toString(Base64.encodeBase64(bytes));
     }
 }
